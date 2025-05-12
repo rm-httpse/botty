@@ -1,25 +1,37 @@
 import socketio
 
 class SocketClient:
-    def __init__(self, server_url):
+    def __init__(self, server_url, namespace):
         self.server_url = server_url
-        self.sio = socketio.Client()
+        self.client = socketio.AsyncClient()
+        self.connected = False
+        self.namespace = namespace
 
-        self.sio.on("connect", self._on_connect)
-        self.sio.on("disconnect", self._on_disconnect)
+        self.client.on("connect", self._on_connect, namespace=self.namespace)
+        self.client.on("disconnect", self._on_disconnect, namespace=self.namespace)
 
-    def connect(self):
+    async def connect(self):
         try:
             print(f"[*] Conectando a {self.server_url}...")
-            self.sio.connect(self.server_url)
+            await self.client.connect(
+                self.server_url,
+                namespaces=["/bot"],
+                socketio_path="web/socket.io",
+                wait=True
+            )
         except Exception as e:
             print(f"[!] Error de conexión: {e}")
 
-    def _on_connect(self):
+    async def _on_connect(self):
+        self.connected = True
         print("[✔] Conectado al microservicio")
 
-    def _on_disconnect(self):
+    async def _on_disconnect(self):
+        self.connected = False
         print("[!] Desconectado del microservicio")
 
-    def send(self, event_name, data):
-        self.sio.emit(event_name, data)
+    async def send(self, event_name, data):
+        if self.connected:
+            await self.client.emit(event_name, data, namespace=self.namespace)
+        else:
+            print("[!] No se puede enviar datos, no estás conectado.")

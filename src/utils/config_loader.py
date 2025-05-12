@@ -5,7 +5,7 @@ import socket
 import re
 from pathlib import Path
 from dotenv import load_dotenv
-from src.db.flyway import run_migrations
+from src.db.flyway import run_migrations, repair_migrations
 
 class ConfigLoader:
     def __init__(self, env_path: str = ".env"):
@@ -15,6 +15,7 @@ class ConfigLoader:
     def _load_config(self):
         self.db_url = self._get("DB_URL")
         self.ms_uri = self._get("MS_URI")
+        self.namespace = self._get("IO_NAMESPACE")
         self.migrations_path = Path(self._get("DB_MIG_PATH", "src/db/migrations"))
 
     def _get(self, key: str, default=None):
@@ -45,11 +46,24 @@ class ConfigLoader:
         if not existing:
             version = self._get_next_version()
             mig_file = self.migrations_path / f"V{version}__{user_mig_pattern}.sql"
-            mig_content = Path("src/db/init/machine.sql").read_text()
+            mig_template = Path("src/db/init/machine.sql").read_text()
+            mig_content = mig_template.format(
+                          username=username,
+                          hostname=hostname,
+                          os_name=os_name,
+                          os_version=os_version
+                      )
             mig_file.write_text(mig_content.strip())
             print(f"  ✔ Creada migración de usuario: {mig_file.name}")
         else:
             print(f"  ~ Migración de usuario ya existe: {existing[0].name}")
+        
+        return {
+            "username": getpass.getuser(),
+            "hostname": socket.gethostname(),
+            "os_name": platform.system(),
+            "os_version": platform.version(),
+        }
 
     def run_migrations(self):
         run_migrations(self.db_url, str(self.migrations_path))
