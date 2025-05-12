@@ -3,7 +3,7 @@ import logging
 
 from src.utils.logger import get_logger
 
-logger = get_logger("Network", logging.INFO)
+logger = get_logger("Network")
 
 
 class SocketClient:
@@ -25,8 +25,12 @@ class SocketClient:
                                 socketio_path="web/socket.io",
                                 wait=True)
     except Exception as e:
-      logger.debug(f'Error while trying to connect')
+      logger.info(f'Error while trying to connect')
       logger.debug(e)
+  
+  async def disconnect(self):
+    logger.info('Disconnect socket')
+    await self.client.disconnect()
 
   async def _on_connect(self):
     self.connected = True
@@ -40,4 +44,4 @@ class SocketClient:
     if self.connected:
       await self.client.emit(event_name, data, namespace=self.namespace)
     else:
-      logger.debug(f'Cannot send if no connection is established')
+      logger.info(f'Cannot send if no connection is established')

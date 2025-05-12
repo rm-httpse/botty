@@ -4,7 +4,7 @@ import logging
 
 from src.utils.logger import get_logger
 
-logger = get_logger("Flyway", logging.INFO)
+logger = get_logger("Flyway")
 
 
 def run_migrations(db_url: str, migrations_path: str = "src/db/migrations"):

@@ -1,7 +1,7 @@
 import logging
 
 
-def get_logger(name="bot", level=logging.DEBUG):
+def get_logger(name="bot", level=logging.INFO):
   logger = logging.getLogger(name)
   if not logger.hasHandlers():
     logger.setLevel(level)

@@ -1,7 +1,10 @@
 import psycopg2
+import logging
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from urllib.parse import urlparse
+from src.utils.logger import get_logger
 
+logger = get_logger("DBHandler")
 
 def connect_to_db(db_url: str):
   parsed = urlparse(db_url)
@@ -31,17 +34,19 @@ def check_db(config: dict):
     exists = cursor.fetchone()
 
     if not exists:
-      create_db(config)
+      logger.info('No database found. Creating a new one')
+      _create_db(config)
     else:
-      print(f"[~] Base de datos '{db_name}' ya existe.")
+      logger.debug('Database found. Skip')
 
     cursor.close()
     conn.close()
   except Exception as e:
-    print(f"[!] Error verificando o creando la base de datos: {e}")
+    logger.info('Error creating DB')
+    logger.debug(e)
 
 
-def create_db(config: dict):
+def _create_db(config: dict):
   db_name = config["db_name"]
   user = config["user"]
   password = config["password"]
@@ -59,9 +64,9 @@ def create_db(config: dict):
 
   try:
     cursor.execute(f"CREATE DATABASE {db_name}")
-    print(f"[✔] Base de datos '{db_name}' creada.")
+    logger.info(f'Database {db_name} created!')
   except psycopg2.errors.DuplicateDatabase:
-    print(f"[~] La base de datos '{db_name}' ya existe.")
+    logger.debug(f'Database already exists')
   finally:
     cursor.close()
     conn.close()

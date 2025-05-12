@@ -6,10 +6,10 @@ import re
 import logging
 from pathlib import Path
 from dotenv import load_dotenv
-from src.db.flyway import run_migrations, repair_migrations
+from src.db.flyway import run_migrations
 from src.utils.logger import get_logger
 
-logger = get_logger("ConfigLoader", logging.INFO)
+logger = get_logger("ConfigLoader")
 
 
 class ConfigLoader:

@@ -1,4 +1,3 @@
-# Dependencies
 # from PIL import Image
 # import cv2
 # import torch
@@ -6,33 +5,42 @@
 # import pyautogui
 import asyncio
 import logging
-import PySimpleGUI as gui
+import sys
 
 from src.utils.config_loader import ConfigLoader
 from src.utils.network import SocketClient
 from src.db.handler import check_db, connect_to_db
 from src.utils.logger import get_logger
+from src.core.bot import BotClient
+from src.ui.cli import user_listener
 
-logger = get_logger("BottyMain", logging.INFO)
-
+logger = get_logger("BottyMain")
 
 async def main():
   config = ConfigLoader()
-  sclient = SocketClient(config.ms_uri, config.namespace)
+  bot = BotClient()
+  socket = SocketClient(config.ms_uri, config.namespace)
 
   conn = connect_to_db(config.db_url)
-  user = config.load_or_create_user()
-
   check_db(conn)
+  user = config.load_or_create_user()
   config.run_migrations()
-  await sclient.connect()
 
-  while True:
-    if sclient.connected:
-      await sclient.send('bot-data', 'yo mf')
-    else:
-      logger.info('Awaiting for connection')
-    await asyncio.sleep(1)
+  await socket.connect()
 
+  def onStart():
+    bot.start(lambda output: socket.send("bot-data", output))
 
-# config_logger()
+  def onPause():
+    bot.stop()
+
+  async def onStop():
+    bot.stop()
+    await socket.disconnect()
+
+  try:
+    await user_listener(onStart, onPause, onStop)
+  except asyncio.CancelledError:
+    logger.info("Program Error")
+  finally:
+    await socket.disconnect()
