@@ -2,22 +2,27 @@
 # from PIL import Image
 # import cv2
 # import torch
-# import logging
 # import numpy
 # import pyautogui
 import asyncio
+import logging
+import PySimpleGUI as gui
 
 from src.utils.config_loader import ConfigLoader
 from src.utils.network import SocketClient
 from src.db.handler import check_db, connect_to_db
+from src.utils.logger import get_logger
+
+logger = get_logger("BottyMain", logging.INFO)
+
 
 async def main():
   config = ConfigLoader()
-  sclient = SocketClient(config.ms_uri)
+  sclient = SocketClient(config.ms_uri, config.namespace)
 
   conn = connect_to_db(config.db_url)
   user = config.load_or_create_user()
-  
+
   check_db(conn)
   config.run_migrations()
   await sclient.connect()
@@ -26,7 +31,8 @@ async def main():
     if sclient.connected:
       await sclient.send('bot-data', 'yo mf')
     else:
-      print('Still connecting...')
+      logger.info('Awaiting for connection')
     await asyncio.sleep(1)
+
 
 # config_logger()

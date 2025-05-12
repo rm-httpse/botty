@@ -1,41 +1,31 @@
 import subprocess
 import urllib.parse
+import logging
+
+from src.utils.logger import get_logger
+
+logger = get_logger("Flyway", logging.INFO)
+
 
 def run_migrations(db_url: str, migrations_path: str = "src/db/migrations"):
-    parsed = urllib.parse.urlparse(db_url)
+  parsed = urllib.parse.urlparse(db_url)
 
-    flyway_cmd = [
-        "flyway",
-        f"-url=jdbc:postgresql://{parsed.hostname}:{parsed.port}{parsed.path}",
-        f"-user={parsed.username}",
-        f"-password={parsed.password}",
-        f"-locations=filesystem:{migrations_path}",
-        "migrate"
-    ]
+  flyway_cmd = [
+      "flyway",
+      f"-url=jdbc:postgresql://{parsed.hostname}:{parsed.port}{parsed.path}",
+      f"-user={parsed.username}", f"-password={parsed.password}",
+      f"-locations=filesystem:{migrations_path}", "migrate"
+  ]
 
-    try:
-        # Ejecuta el comando Flyway
-        print("[*] Ejecutando migraciones con Flyway...")
-        result = subprocess.run(flyway_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"[✔] Migraciones aplicadas correctamente:\n{result.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        print(f"[!] Error aplicando migraciones: {e.stderr.decode()}")
-
-def repair_migrations(db_url: str, migrations_path: str = "src/db/migrations"):
-    parsed = urllib.parse.urlparse(db_url)
-    
-    flyway_cmd = [
-        "flyway",
-        f"-url=jdbc:postgresql://{parsed.hostname}:{parsed.port}{parsed.path}",
-        f"-user={parsed.username}",
-        f"-password={parsed.password}",
-        f"-locations=filesystem:{migrations_path}",
-        "repair"
-    ]
-
-    try:
-        print("[*] Ejecutando reparación con Flyway...")
-        result = subprocess.run(flyway_cmd, check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        print(f"[✔] Reparación completada:\n{result.stdout.decode()}")
-    except subprocess.CalledProcessError as e:
-        print(f"[!] Error durante la reparación: {e.stderr.decode()}")
+  try:
+    logger.info(f'Flyway on its way')
+    result = subprocess.run(flyway_cmd,
+                            check=True,
+                            stdout=subprocess.PIPE,
+                            stderr=subprocess.PIPE)
+    logger.info(f'Migrations applied!')
+    logger.debug({result.stdout.decode()})
+  except subprocess.CalledProcessError as e:
+    print(f"[!] Error aplicando migraciones: {e.stderr.decode()}")
+    logger.debug(f'Error while running migrations')
+    logger.debug({result.stdout.decode()})
