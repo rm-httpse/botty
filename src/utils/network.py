@@ -27,7 +27,7 @@ class SocketClient:
     except Exception as e:
       logger.info(f'Error while trying to connect')
       logger.debug(e)
-  
+
   async def disconnect(self):
     logger.info('Disconnect socket')
     await self.client.disconnect()

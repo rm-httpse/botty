@@ -6,6 +6,7 @@ from src.utils.logger import get_logger
 
 logger = get_logger("DBHandler")
 
+
 def connect_to_db(db_url: str):
   parsed = urlparse(db_url)
   db_name = parsed.path.lstrip("/")

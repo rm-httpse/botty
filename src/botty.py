@@ -16,17 +16,11 @@ from src.ui.cli import user_listener
 
 logger = get_logger("BottyMain")
 
+
 async def main():
   config = ConfigLoader()
   bot = BotClient()
   socket = SocketClient(config.ms_uri, config.namespace)
-
-  conn = connect_to_db(config.db_url)
-  check_db(conn)
-  user = config.load_or_create_user()
-  config.run_migrations()
-
-  await socket.connect()
 
   def onStart():
     bot.start(lambda output: socket.send("bot-data", output))
@@ -37,6 +31,13 @@ async def main():
   async def onStop():
     bot.stop()
     await socket.disconnect()
+
+  conn = connect_to_db(config.db_url)
+  check_db(conn)
+  user = config.load_or_create_user()
+  config.run_migrations()
+
+  await socket.connect()
 
   try:
     await user_listener(onStart, onPause, onStop)
