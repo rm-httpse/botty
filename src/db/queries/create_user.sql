@@ -10,7 +10,6 @@ CREATE TABLE IF NOT EXISTS machine.reg_user (
     UNIQUE (username, hostname)
 );
 
-
 INSERT INTO machine.reg_user (username, hostname, os_name, os_version)
 VALUES ('{username}', '{hostname}', '{os_name}', '{os_version}')
 ON CONFLICT DO NOTHING;

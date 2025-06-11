@@ -1,14 +1,36 @@
 import psycopg2
-import logging
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 from urllib.parse import urlparse
 from src.utils.logger import get_logger
 
 logger = get_logger("DBHandler")
 
+class DBHandler:
+  def __init__(self, db_url: str):
+    self.conn_config = self.get_db_config(db_url)
+    self.connection = self.get_connection(db_url)
+    logger.debug("Database connection initialized")
 
-def connect_to_db(db_url: str):
+
+def get_connection(db_url: str):
   parsed = urlparse(db_url)
+  conn = None
+  while not conn:
+    try:
+      conn = psycopg2.connect(
+        dbname=parsed.dbname,
+        user=parsed.user,
+        password=parsed.password,
+        host=parsed.host,
+        port=parsed.port
+      )
+      conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+      return conn
+    except psycopg2.OperationalError as err: # handle to create
+      print(err)
+  
+
+  
   db_name = parsed.path.lstrip("/")
   user = parsed.username
   password = parsed.password
@@ -31,6 +53,7 @@ def check_db(config: dict):
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
     cursor = conn.cursor()
 
+    # cambiar para referenciar un archivo con esta query
     cursor.execute("SELECT 1 FROM pg_database WHERE datname = %s", (db_name, ))
     exists = cursor.fetchone()
 
@@ -54,7 +77,6 @@ def _create_db(config: dict):
   host = config["host"]
   port = config["port"]
 
-  # Paso 1: crear base de datos desde postgres
   conn = psycopg2.connect(dbname="postgres",
                           user=user,
                           password=password,
@@ -64,6 +86,7 @@ def _create_db(config: dict):
   cursor = conn.cursor()
 
   try:
+    # esto tambien cambiar a una query de un archivo
     cursor.execute(f"CREATE DATABASE {db_name}")
     logger.info(f'Database {db_name} created!')
   except psycopg2.errors.DuplicateDatabase:
@@ -71,18 +94,6 @@ def _create_db(config: dict):
   finally:
     cursor.close()
     conn.close()
-
-  # Paso 2: crear schemas dentro de la nueva base
-  conn = psycopg2.connect(dbname=db_name,
-                          user=user,
-                          password=password,
-                          host=host,
-                          port=port)
-  cursor = conn.cursor()
-
-  for schema in ["machine", "os", "apps"]:
-    cursor.execute(f"CREATE SCHEMA IF NOT EXISTS {schema};")
-    print(f"[✔] Schema '{schema}' creado.")
 
   conn.commit()
   cursor.close()

@@ -11,6 +11,6 @@ def interpret(task: dict | None = None) -> BotState:
     logger.debug('Grabbing image')
     screen = ImageGrab.grab()
     logger.debug('Returning state')
-    return BotState(screen=screen, task=task or {}, status='idle')
+    return BotState(screen=screen, task=task or {}, status='idle') # status = idle | botting | awaiting-order
   except Exception as e:
     return BotState(screen=None, task=task or {}, status=f"error: {e}")
